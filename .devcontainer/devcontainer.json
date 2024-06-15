@@ -14,5 +14,10 @@
         "formulahendry.auto-rename-tag",
         "dsznajder.es7-react-js-snippets"
     ],
-    "remoteUser": "devuser"
+    "remoteUser": "devuser",
+    "workspaceFolder": "/home/devuser/chess-web-app",
+    "mounts": [
+        "source=/home/computer/git/chess-web-app,target=/home/devuser/chess-web-app,type=bind,consistency=cached"
+    ],
+    "postCreateCommand": "npm install"
 }

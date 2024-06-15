@@ -35,12 +35,9 @@ USER $USERNAME
 ENV SHELL /bin/bash
 
 # Set the working directory
-WORKDIR /home/devuser/
+WORKDIR /home/devuser/chess-web-app
 
-# Create a new React application in the chess-web-app directory
-RUN create-react-app chess-web-app
-
-# Copy package.json and package-lock.json
+# Copy package.json and package-lock.json to the working directory
 COPY package*.json ./
 
 # Install dependencies
