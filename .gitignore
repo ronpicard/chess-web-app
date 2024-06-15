@@ -91,3 +91,7 @@ Thumbs.db
 
 # Bower dependency directory
 bower_components
+
+# Custom chess project directories (if any)
+.chess/
+.chess-board/
