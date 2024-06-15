@@ -1,56 +1,94 @@
 .chess-game {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    box-sizing: border-box;
-    min-height: 100vh; /* Ensure it covers the full height of the viewport */
-    background-color: #000000; /* Set background to black */
-  }
-  
-  .chess-game h1 {
-    margin: 0;
-    padding: 20px;
-    color: #ffffff; /* Set text color to white for better visibility */
-  }
-  
-  .chess-game .board-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background-color: #b58863; /* Keep the chessboard background color */
-    padding: 10px;
-    border-radius: 10px;
-  }
-  
-  .chess-game .chessboard-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .chess-game .chessboard-container .chessboard-board {
-    width: 100% !important;
-    height: auto !important;
-  }
-  
-  .chess-game button {
-    background-color: #4CAF50; /* Green background */
-    border: none; /* Remove borders */
-    color: white; /* White text */
-    padding: 15px 32px; /* Some padding */
-    text-align: center; /* Center the text (if you want to align the text center) */
-    text-decoration: none; /* Remove underline */
-    display: inline-block; /* Make the button inline-block so that it behaves like a button */
-    font-size: 16px; /* Increase font size */
-    margin: 10px 2px; /* Some margin */
-    cursor: pointer; /* Pointer/hand icon */
-    border-radius: 12px; /* Rounded corners */
-    transition: background-color 0.3s ease; /* Smooth transition for background color */
-  }
-  
-  .chess-game button:hover {
-    background-color: #45a049; /* Darker green on hover */
-  }
-  
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+  min-height: 100vh; /* Ensure it covers the full height of the viewport */
+  background-color: #000000; /* Set background to black */
+}
+
+.chess-game h1 {
+  margin: 0;
+  padding: 20px;
+  color: #ffffff; /* Set text color to white for better visibility */
+}
+
+.chess-game .board-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #b58863; /* Keep the chessboard background color */
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.chess-game .chessboard-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.chess-game .chessboard-container .chessboard-board {
+  width: 100% !important;
+  height: auto !important;
+}
+
+.chess-game .player-info {
+  font-size: 20px; /* Set the font size to make the text smaller */
+  color: #ffffff; /* Ensure text color is white for better visibility */
+  margin: 5px 0; /* Add some margin for spacing */
+}
+
+.chess-game .status-message {
+  font-size: 40px; /* Set the font size for the status message */
+  margin: 10px 0; /* Add some margin for spacing */
+  font-weight: bold; /* Make the text bold */
+}
+
+.chess-game .status-message.ai-thinking {
+  color: #ff00ff; /* Bright purple for AI is thinking */
+}
+
+.chess-game .status-message.your-move {
+  color: #33e3ec; /* Bright blue for your move */
+}
+
+.chess-game button {
+  background-color: #4CAF50; /* Green background */
+  border: none; /* Remove borders */
+  color: white; /* White text */
+  padding: 10px 20px; /* Some padding */
+  text-align: center; /* Center the text (if you want to align the text center) */
+  text-decoration: none; /* Remove underline */
+  display: inline-block; /* Make the button inline-block so that it behaves like a button */
+  font-size: 30px; /* Increase font size */
+  margin: 10px 5px; /* Some margin */
+  cursor: pointer; /* Pointer/hand icon */
+  border-radius: 12px; /* Rounded corners */
+  transition: background-color 0.3s ease; /* Smooth transition for background color */
+}
+
+.chess-game button:hover {
+  background-color: #45a049; /* Darker green on hover */
+}
+
+.chess-game label {
+  color: #ffffff;
+  margin-left: 10px;
+  font-size: 30px;
+  display: flex;
+  align-items: center;
+}
+
+.chess-game input[type="number"] {
+  background-color: #333;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  margin: 0 10px;
+  border-radius: 5px;
+  font-size: 30px;
+  text-align: center;
+}
