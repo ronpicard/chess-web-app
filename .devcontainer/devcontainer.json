@@ -1,0 +1,18 @@
+{
+    "name": "RHEL DevContainer",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash"
+    },
+    "extensions": [
+        "ms-python.python",
+        "redhat.vscode-yaml",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "formulahendry.auto-rename-tag",
+        "dsznajder.es7-react-js-snippets"
+    ],
+    "remoteUser": "devuser"
+}
