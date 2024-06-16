@@ -243,7 +243,7 @@ const ChessGame = () => {
             value={searchDepth}
             onChange={(e) => setSearchDepth(Number(e.target.value))}
             min="1"
-            max="3"
+            max="4"
           />
         </label>
         <p className="player-info">You are: {playerColor === 'w' ? 'White' : 'Black'}</p>
