@@ -28,3 +28,8 @@ Welcome to the Chess Web App! This project is a React-based web application that
    ```bash
    git clone https://github.com/yourusername/chess-web-app.git
    cd chess-web-app
+   reopen in devcontainer (VS Code)
+   npm start
+
+## Live Demo!!
+https://ronpicard.github.io/chess-web-app/
