@@ -113,43 +113,64 @@ const ChessGame = () => {
     });
   };
 
-  const minimax = (game, depth, isMaximizingPlayer) => {
+  const minimax = (game, depth, isMaximizingPlayer, alpha, beta) => {
     if (depth === 0 || game.isGameOver()) {
-      return evaluateBoard(game.board());
+      if (game.isCheckmate()) {
+        // Assign a high value for checkmate favoring the maximizing player
+        return isMaximizingPlayer ? -Infinity : Infinity;
+      } else if (game.isStalemate() || game.isDraw()) {
+        // Assign a neutral value for stalemate or draw
+        return 0;
+      } else {
+        return evaluateBoard(game.board());
+      }
     }
 
     const moves = game.moves({ verbose: true });
     let bestMove;
+
     if (isMaximizingPlayer) {
-      let bestValue = -Infinity;
+      let maxEval = -Infinity;
       for (let move of moves) {
         game.move(move);
-        const value = minimax(game, depth - 1, false);
+        const evaluation = minimax(game, depth - 1, false, alpha, beta);
         game.undo();
-        if (value > bestValue) {
-          bestValue = value;
-          bestMove = move;
+        if (evaluation > maxEval) {
+          maxEval = evaluation;
+          if (depth === searchDepth) {
+            bestMove = move;
+          }
+        }
+        alpha = Math.max(alpha, evaluation);
+        if (beta <= alpha) {
+          break;
         }
       }
-      return depth === searchDepth ? bestMove : bestValue;
+      return depth === searchDepth ? bestMove : maxEval;
     } else {
-      let bestValue = Infinity;
+      let minEval = Infinity;
       for (let move of moves) {
         game.move(move);
-        const value = minimax(game, depth - 1, true);
+        const evaluation = minimax(game, depth - 1, true, alpha, beta);
         game.undo();
-        if (value < bestValue) {
-          bestValue = value;
-          bestMove = move;
+        if (evaluation < minEval) {
+          minEval = evaluation;
+          if (depth === searchDepth) {
+            bestMove = move;
+          }
+        }
+        beta = Math.min(beta, evaluation);
+        if (beta <= alpha) {
+          break;
         }
       }
-      return depth === searchDepth ? bestMove : bestValue;
+      return depth === searchDepth ? bestMove : minEval;
     }
   };
 
   const makeAIMove = () => {
     const gameCopy = new Chess(chess.fen());
-    const bestMove = minimax(gameCopy, searchDepth, chess.turn() === 'w');
+    const bestMove = minimax(gameCopy, searchDepth, chess.turn() === 'w', -Infinity, Infinity);
 
     if (bestMove) {
       setLastMoveBy('ai'); // Set before making the AI move
@@ -243,7 +264,7 @@ const ChessGame = () => {
             value={searchDepth}
             onChange={(e) => setSearchDepth(Number(e.target.value))}
             min="1"
-            max="4"
+            max="5ds"
           />
         </label>
         <p className="player-info">You are: {playerColor === 'w' ? 'White' : 'Black'}</p>
