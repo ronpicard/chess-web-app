@@ -14,6 +14,8 @@ const ChessGame = () => {
   const [lastMoveBy, setLastMoveBy] = useState(''); // Track the last move by 'human' or 'ai'
   const [searchDepth, setSearchDepth] = useState(3); // Customizable search depth
   const [aiThinking, setAIThinking] = useState(false); // Track AI thinking status
+  const [selectedSquare, setSelectedSquare] = useState(null); // Track the selected square
+  const [possibleMoves, setPossibleMoves] = useState([]); // Track possible moves for the selected square
 
   function getBoardSize() {
     const minWidthHeight = Math.min(window.innerWidth, window.innerHeight);
@@ -51,6 +53,19 @@ const ChessGame = () => {
     }
   }, [playerColor, gameOver, lastMoveBy]);
 
+  const handleSquareClick = (square) => {
+    if (selectedSquare === square) {
+      // Deselect if the same square is clicked
+      setSelectedSquare(null);
+      setPossibleMoves([]);
+    } else {
+      // Select the square and highlight possible moves
+      setSelectedSquare(square);
+      const moves = chess.moves({ square, verbose: true });
+      setPossibleMoves(moves.map(move => move.to));
+    }
+  };
+
   const handleMove = ({ sourceSquare, targetSquare }) => {
     const possibleMoves = chess.moves({ square: sourceSquare, verbose: true });
 
@@ -65,6 +80,8 @@ const ChessGame = () => {
       });
       setFen(chess.fen());
       setLastMoveBy('human'); // Set after making the move
+      setSelectedSquare(null); // Reset selected square
+      setPossibleMoves([]); // Reset possible moves
 
       if (chess.isCheckmate()) {
         setGameOver(true);
@@ -178,6 +195,20 @@ const ChessGame = () => {
     setAIThinking(false); // Reset AI thinking status
   };
 
+  const customSquareStyles = () => {
+    const highlightStyles = {};
+
+    if (selectedSquare) {
+      highlightStyles[selectedSquare] = { backgroundColor: 'rgba(255, 255, 0, 0.6)' };
+    }
+
+    possibleMoves.forEach(move => {
+      highlightStyles[move] = { backgroundColor: 'rgba(255, 0, 0, 0.6)' };
+    });
+
+    return highlightStyles;
+  };
+
   return (
     <div className="chess-game">
       <h1>AI Chess Game</h1>
@@ -208,14 +239,20 @@ const ChessGame = () => {
       <div className="board-container">
         <Chessboard
           position={fen}
-          onDrop={({ sourceSquare, targetSquare }) => {
-            if (chess.turn() === playerColor && lastMoveBy !== 'ai') {
-              handleMove({ sourceSquare, targetSquare });
+          onSquareClick={(square) => {
+            if (selectedSquare && possibleMoves.includes(square)) {
+              handleMove({ sourceSquare: selectedSquare, targetSquare: square });
+            } else {
+              handleSquareClick(square);
             }
+          }}
+          onDrop={({ sourceSquare, targetSquare }) => {
+            handleMove({ sourceSquare, targetSquare });
           }}
           width={size}
           draggable={!gameOver}
           orientation={playerColor === 'w' ? 'white' : 'black'}
+          squareStyles={customSquareStyles()}
         />
       </div>
     </div>
