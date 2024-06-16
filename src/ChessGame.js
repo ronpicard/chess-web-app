@@ -14,8 +14,7 @@ const ChessGame = () => {
   const [lastMoveBy, setLastMoveBy] = useState(''); // Track the last move by 'human' or 'ai'
   const [searchDepth, setSearchDepth] = useState(3); // Customizable search depth
   const [aiThinking, setAIThinking] = useState(false); // Track AI thinking status
-  const [selectedSquare, setSelectedSquare] = useState(null); // Track the selected square
-  const [possibleMoves, setPossibleMoves] = useState([]); // Track possible moves for the selected square
+  const [clickedSquare, setClickedSquare] = useState(null); // Track clicked square
 
   function getBoardSize() {
     const minWidthHeight = Math.min(window.innerWidth, window.innerHeight);
@@ -35,11 +34,21 @@ const ChessGame = () => {
   }, []);
 
   useEffect(() => {
+    if (chess.isCheckmate()) {
+      setGameOver(true);
+      setMessage('Checkmate!');
+    } else if (chess.isDraw()) {
+      setGameOver(true);
+      setMessage('Draw!');
+    } else if (chess.isStalemate()) {
+      setGameOver(true);
+      setMessage('Stalemate!');
+    }
     if (!gameOver && chess.turn() !== playerColor && lastMoveBy === 'human') {
       setAIThinking(true);
       setTimeout(() => {
         makeAIMove();
-      }, 2000); // Pause for 2 seconds before making the AI move
+      }, 500); // Pause for 0.5 seconds before making the AI move
     }
   }, [fen, gameOver, playerColor, lastMoveBy]);
 
@@ -49,22 +58,9 @@ const ChessGame = () => {
       setAIThinking(true);
       setTimeout(() => {
         makeAIMove();
-      }, 2000);
+      }, 500);
     }
   }, [playerColor, gameOver, lastMoveBy]);
-
-  const handleSquareClick = (square) => {
-    if (selectedSquare === square) {
-      // Deselect if the same square is clicked
-      setSelectedSquare(null);
-      setPossibleMoves([]);
-    } else {
-      // Select the square and highlight possible moves
-      setSelectedSquare(square);
-      const moves = chess.moves({ square, verbose: true });
-      setPossibleMoves(moves.map(move => move.to));
-    }
-  };
 
   const handleMove = ({ sourceSquare, targetSquare }) => {
     const possibleMoves = chess.moves({ square: sourceSquare, verbose: true });
@@ -74,14 +70,14 @@ const ChessGame = () => {
     );
 
     if (isLegalMove) {
-      chess.move({
+      const moveDetails = chess.move({
         from: sourceSquare,
         to: targetSquare,
+        promotion: possibleMoves.some(move => move.flags.includes('p')) ? 'q' : undefined
       });
       setFen(chess.fen());
       setLastMoveBy('human'); // Set after making the move
-      setSelectedSquare(null); // Reset selected square
-      setPossibleMoves([]); // Reset possible moves
+      setClickedSquare(null); // Clear clicked square
 
       if (chess.isCheckmate()) {
         setGameOver(true);
@@ -152,24 +148,33 @@ const ChessGame = () => {
   };
 
   const makeAIMove = () => {
-    setLastMoveBy('ai'); // Set before making the AI move
     const gameCopy = new Chess(chess.fen());
     const bestMove = minimax(gameCopy, searchDepth, chess.turn() === 'w');
-    chess.move(bestMove);
-    setFen(chess.fen());
-    setAIThinking(false); // AI has finished thinking
-    if (chess.isCheckmate()) {
-      setGameOver(true);
-      setMessage('Checkmate!');
-    } else if (chess.isDraw()) {
-      setGameOver(true);
-      setMessage('Draw!');
-    } else if (chess.isStalemate()) {
-      setGameOver(true);
-      setMessage('Stalemate!');
+
+    if (bestMove) {
+      setLastMoveBy('ai'); // Set before making the AI move
+      const moveDetails = chess.move({
+        from: bestMove.from,
+        to: bestMove.to,
+        promotion: bestMove.flags && bestMove.flags.includes('p') ? 'q' : undefined
+      });
+      setFen(chess.fen());
+      setAIThinking(false); // AI has finished thinking
+      if (chess.isCheckmate()) {
+        setGameOver(true);
+        setMessage('Checkmate!');
+      } else if (chess.isDraw()) {
+        setGameOver(true);
+        setMessage('Draw!');
+      } else if (chess.isStalemate()) {
+        setGameOver(true);
+        setMessage('Stalemate!');
+      } else {
+        // Switch back to human move
+        setLastMoveBy('ai-done');
+      }
     } else {
-      // Switch back to human move
-      setLastMoveBy('ai-done');
+      setAIThinking(false);
     }
   };
 
@@ -195,16 +200,28 @@ const ChessGame = () => {
     setAIThinking(false); // Reset AI thinking status
   };
 
+  const handleSquareClick = (square) => {
+    if (clickedSquare) {
+      handleMove({ sourceSquare: clickedSquare, targetSquare: square });
+    }
+    setClickedSquare(square);
+  };
+
   const customSquareStyles = () => {
     const highlightStyles = {};
 
-    if (selectedSquare) {
-      highlightStyles[selectedSquare] = { backgroundColor: 'rgba(255, 255, 0, 0.6)' };
-    }
+    if (clickedSquare) {
+      highlightStyles[clickedSquare] = {
+        backgroundColor: 'rgba(255, 255, 0, 0.4)', // Highlight clicked square
+      };
 
-    possibleMoves.forEach(move => {
-      highlightStyles[move] = { backgroundColor: 'rgba(255, 0, 0, 0.6)' };
-    });
+      const possibleMoves = chess.moves({ square: clickedSquare, verbose: true });
+      possibleMoves.forEach(move => {
+        highlightStyles[move.to] = {
+          backgroundColor: 'rgba(255, 0, 0, 0.4)', // Highlight possible moves
+        };
+      });
+    }
 
     return highlightStyles;
   };
@@ -239,16 +256,12 @@ const ChessGame = () => {
       <div className="board-container">
         <Chessboard
           position={fen}
-          onSquareClick={(square) => {
-            if (selectedSquare && possibleMoves.includes(square)) {
-              handleMove({ sourceSquare: selectedSquare, targetSquare: square });
-            } else {
-              handleSquareClick(square);
+          onDrop={({ sourceSquare, targetSquare }) => {
+            if (chess.turn() === playerColor && lastMoveBy !== 'ai') {
+              handleMove({ sourceSquare, targetSquare });
             }
           }}
-          onDrop={({ sourceSquare, targetSquare }) => {
-            handleMove({ sourceSquare, targetSquare });
-          }}
+          onSquareClick={handleSquareClick}
           width={size}
           draggable={!gameOver}
           orientation={playerColor === 'w' ? 'white' : 'black'}
