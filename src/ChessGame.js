@@ -127,7 +127,7 @@ const ChessGame = () => {
     }
 
     const moves = game.moves({ verbose: true });
-    let bestMove;
+    let bestMove = null;
 
     if (isMaximizingPlayer) {
       let maxEval = -Infinity;
@@ -190,12 +190,22 @@ const ChessGame = () => {
       } else if (chess.isStalemate()) {
         setGameOver(true);
         setMessage('Stalemate!');
+      } else if (chess.inCheck()) {
+        setMessage('Check!');
       } else {
         // Switch back to human move
         setLastMoveBy('ai-done');
       }
     } else {
       setAIThinking(false);
+      // Make a random move if no best move is found
+      const randomMove = gameCopy.moves()[Math.floor(Math.random() * gameCopy.moves().length)];
+      if (randomMove) {
+        chess.move(randomMove);
+        setFen(chess.fen());
+        setLastMoveBy('ai-done');
+        setMessage('');
+      }
     }
   };
 
@@ -247,6 +257,14 @@ const ChessGame = () => {
     return highlightStyles;
   };
 
+  const increaseDifficulty = () => {
+    setSearchDepth(prev => Math.min(prev + 1, 4));
+  };
+
+  const decreaseDifficulty = () => {
+    setSearchDepth(prev => Math.max(prev - 1, 1));
+  };
+
   return (
     <div className="chess-game">
       <h1>AI Chess Game</h1>
@@ -257,16 +275,9 @@ const ChessGame = () => {
         <button onClick={handleRestart}>
           Restart
         </button>
-        <label>
-          AI Difficulty Level:
-          <input
-            type="number"
-            value={searchDepth}
-            onChange={(e) => setSearchDepth(Number(e.target.value))}
-            min="1"
-            max="5"
-          />
-        </label>
+        <button onClick={decreaseDifficulty}>Decrease Difficulty</button>
+        <button onClick={increaseDifficulty}>Increase Difficulty</button>
+        <p className="player-info">AI Difficulty Level: {searchDepth}</p>
         <p className="player-info">You are: {playerColor === 'w' ? 'White' : 'Black'}</p>
         <p className="player-info">The AI is: {playerColor === 'w' ? 'Black' : 'White'}</p>
         <p className={`status-message ${aiThinking ? 'ai-thinking' : 'your-move'}`}>
