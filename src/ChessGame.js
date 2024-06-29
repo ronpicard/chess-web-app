@@ -12,7 +12,7 @@ const ChessGame = () => {
   const [message, setMessage] = useState('');
   const [playerColor, setPlayerColor] = useState('w'); // 'w' for White, 'b' for Black
   const [lastMoveBy, setLastMoveBy] = useState(''); // Track the last move by 'human' or 'ai'
-  const [searchDepth, setSearchDepth] = useState(3); // Customizable search depth
+  const [searchDepth, setSearchDepth] = useState(3); // Default to hardest difficulty
   const [aiThinking, setAIThinking] = useState(false); // Track AI thinking status
   const [clickedSquare, setClickedSquare] = useState(null); // Track clicked square
 
@@ -128,6 +128,7 @@ const ChessGame = () => {
 
     const moves = game.moves({ verbose: true });
     let bestMove = null;
+    let bestMoves = [];
 
     if (isMaximizingPlayer) {
       let maxEval = -Infinity;
@@ -137,14 +138,20 @@ const ChessGame = () => {
         game.undo();
         if (evaluation > maxEval) {
           maxEval = evaluation;
+          bestMoves = [move];
           if (depth === searchDepth) {
             bestMove = move;
           }
+        } else if (evaluation === maxEval) {
+          bestMoves.push(move);
         }
         alpha = Math.max(alpha, evaluation);
         if (beta <= alpha) {
           break;
         }
+      }
+      if (depth === searchDepth && bestMoves.length > 0) {
+        bestMove = bestMoves[Math.floor(Math.random() * bestMoves.length)];
       }
       return depth === searchDepth ? bestMove : maxEval;
     } else {
@@ -155,14 +162,20 @@ const ChessGame = () => {
         game.undo();
         if (evaluation < minEval) {
           minEval = evaluation;
+          bestMoves = [move];
           if (depth === searchDepth) {
             bestMove = move;
           }
+        } else if (evaluation === minEval) {
+          bestMoves.push(move);
         }
         beta = Math.min(beta, evaluation);
         if (beta <= alpha) {
           break;
         }
+      }
+      if (depth === searchDepth && bestMoves.length > 0) {
+        bestMove = bestMoves[Math.floor(Math.random() * bestMoves.length)];
       }
       return depth === searchDepth ? bestMove : minEval;
     }
@@ -258,11 +271,17 @@ const ChessGame = () => {
   };
 
   const increaseDifficulty = () => {
-    setSearchDepth(prev => Math.min(prev + 1, 4));
+    setSearchDepth(prev => Math.min(prev + 1, 3));
   };
 
   const decreaseDifficulty = () => {
     setSearchDepth(prev => Math.max(prev - 1, 1));
+  };
+
+  const getDifficultyLabel = (depth) => {
+    if (depth === 1) return 'Easy';
+    if (depth === 2) return 'Medium';
+    if (depth === 3) return 'Hard';
   };
 
   return (
@@ -277,7 +296,7 @@ const ChessGame = () => {
         </button>
         <button onClick={decreaseDifficulty}>Decrease Difficulty</button>
         <button onClick={increaseDifficulty}>Increase Difficulty</button>
-        <p className="player-info">AI Difficulty Level: {searchDepth}</p>
+        <p className="player-info">AI Difficulty Level: {getDifficultyLabel(searchDepth)}</p>
         <p className="player-info">You are: {playerColor === 'w' ? 'White' : 'Black'}</p>
         <p className="player-info">The AI is: {playerColor === 'w' ? 'Black' : 'White'}</p>
         <p className={`status-message ${aiThinking ? 'ai-thinking' : 'your-move'}`}>
