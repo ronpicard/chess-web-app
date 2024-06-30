@@ -127,46 +127,30 @@ const ChessGame = () => {
     }
 
     const moves = game.moves({ verbose: true });
-    let bestMove = null;
+    let bestEval = isMaximizingPlayer ? -Infinity : Infinity;
     let bestMoves = [];
 
-    if (isMaximizingPlayer) {
-      let maxEval = -Infinity;
-      for (let move of moves) {
-        game.move(move);
-        const evaluation = minimax(game, depth - 1, false, alpha, beta);
-        game.undo();
-        if (evaluation > maxEval) {
-          maxEval = evaluation;
+    for (let move of moves) {
+      game.move(move);
+      const evaluation = minimax(game, depth - 1, !isMaximizingPlayer, alpha, beta);
+      game.undo();
+
+      if (isMaximizingPlayer) {
+        if (evaluation > bestEval) {
+          bestEval = evaluation;
           bestMoves = [move];
-          if (depth === searchDepth) {
-            bestMove = move;
-          }
-        } else if (evaluation === maxEval) {
+        } else if (evaluation === bestEval) {
           bestMoves.push(move);
         }
         alpha = Math.max(alpha, evaluation);
         if (beta <= alpha) {
           break;
         }
-      }
-      if (depth === searchDepth && bestMoves.length > 0) {
-        bestMove = bestMoves[Math.floor(Math.random() * bestMoves.length)];
-      }
-      return depth === searchDepth ? bestMove : maxEval;
-    } else {
-      let minEval = Infinity;
-      for (let move of moves) {
-        game.move(move);
-        const evaluation = minimax(game, depth - 1, true, alpha, beta);
-        game.undo();
-        if (evaluation < minEval) {
-          minEval = evaluation;
+      } else {
+        if (evaluation < bestEval) {
+          bestEval = evaluation;
           bestMoves = [move];
-          if (depth === searchDepth) {
-            bestMove = move;
-          }
-        } else if (evaluation === minEval) {
+        } else if (evaluation === bestEval) {
           bestMoves.push(move);
         }
         beta = Math.min(beta, evaluation);
@@ -174,11 +158,13 @@ const ChessGame = () => {
           break;
         }
       }
-      if (depth === searchDepth && bestMoves.length > 0) {
-        bestMove = bestMoves[Math.floor(Math.random() * bestMoves.length)];
-      }
-      return depth === searchDepth ? bestMove : minEval;
     }
+
+    if (depth === searchDepth && bestMoves.length > 0) {
+      return bestMoves[Math.floor(Math.random() * bestMoves.length)];
+    }
+
+    return bestEval;
   };
 
   const makeAIMove = () => {
