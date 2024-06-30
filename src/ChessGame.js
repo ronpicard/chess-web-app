@@ -128,7 +128,7 @@ const ChessGame = () => {
 
     const moves = game.moves({ verbose: true });
     let bestEval = isMaximizingPlayer ? -Infinity : Infinity;
-    let bestMoves = [];
+    let bestMove = null;
 
     for (let move of moves) {
       game.move(move);
@@ -138,9 +138,7 @@ const ChessGame = () => {
       if (isMaximizingPlayer) {
         if (evaluation > bestEval) {
           bestEval = evaluation;
-          bestMoves = [move];
-        } else if (evaluation === bestEval) {
-          bestMoves.push(move);
+          bestMove = move;
         }
         alpha = Math.max(alpha, evaluation);
         if (beta <= alpha) {
@@ -149,9 +147,7 @@ const ChessGame = () => {
       } else {
         if (evaluation < bestEval) {
           bestEval = evaluation;
-          bestMoves = [move];
-        } else if (evaluation === bestEval) {
-          bestMoves.push(move);
+          bestMove = move;
         }
         beta = Math.min(beta, evaluation);
         if (beta <= alpha) {
@@ -160,8 +156,8 @@ const ChessGame = () => {
       }
     }
 
-    if (depth === searchDepth && bestMoves.length > 0) {
-      return bestMoves[Math.floor(Math.random() * bestMoves.length)];
+    if (depth === searchDepth) {
+      return bestMove;
     }
 
     return bestEval;
@@ -173,7 +169,7 @@ const ChessGame = () => {
 
     if (bestMove) {
       setLastMoveBy('ai'); // Set before making the AI move
-      const moveDetails = chess.move({
+      chess.move({
         from: bestMove.from,
         to: bestMove.to,
         promotion: bestMove.flags && bestMove.flags.includes('p') ? 'q' : undefined
