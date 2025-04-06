@@ -14,7 +14,7 @@ const ChessGame = () => {
   const [searchDepth, setSearchDepth] = useState(3);
   const [aiThinking, setAIThinking] = useState(false);
   const [clickedSquare, setClickedSquare] = useState(null);
-  const [aiEngine, setAIEngine] = useState('minimax');
+  const [aiEngine, setAIEngine] = useState('stockfish');
   const [stockfish, setStockfish] = useState(null);
 
   function getBoardSize() {
@@ -46,14 +46,6 @@ const ChessGame = () => {
     }
   }, [fen]);
 
-  useEffect(() => {
-    // If black is AI and it's white's turn to start
-    if (playerColor === 'b' && chess.turn() === 'w' && !gameOver) {
-      setAIThinking(true);
-      setTimeout(() => makeAIMove(), 500);
-    }
-  }, [playerColor, gameOver]);
-
   const handleMove = ({ sourceSquare, targetSquare }) => {
     const possibleMoves = chess.moves({ square: sourceSquare, verbose: true });
     const isLegalMove = possibleMoves.some(move => move.to === targetSquare);
@@ -69,7 +61,7 @@ const ChessGame = () => {
 
       if (!chess.isGameOver()) {
         setAIThinking(true);
-        setTimeout(() => makeAIMove(), 500);
+        setTimeout(() => makeAIMoveFromGame(chess), 500);
       }
     }
   };
@@ -121,17 +113,17 @@ const ChessGame = () => {
     return depth === searchDepth ? bestMove : bestEval;
   };
 
-  const makeAIMove = () => {
+  const makeAIMoveFromGame = (gameInstance) => {
     if (aiEngine === 'minimax') {
-      const gameCopy = new Chess(chess.fen());
-      const bestMove = minimax(gameCopy, searchDepth, chess.turn() === 'w', -Infinity, Infinity);
+      const bestMove = minimax(new Chess(gameInstance.fen()), searchDepth, gameInstance.turn() === 'w', -Infinity, Infinity);
       if (bestMove) {
-        chess.move({
+        gameInstance.move({
           from: bestMove.from,
           to: bestMove.to,
           promotion: bestMove.flags?.includes('p') ? 'q' : undefined
         });
-        setFen(chess.fen());
+        setFen(gameInstance.fen());
+        setChess(new Chess(gameInstance.fen()));
         setAIThinking(false);
       }
       return;
@@ -145,7 +137,7 @@ const ChessGame = () => {
         stockfish.postMessage('isready');
       }
       if (event.data === 'readyok') {
-        stockfish.postMessage(`position fen ${chess.fen()}`);
+        stockfish.postMessage(`position fen ${gameInstance.fen()}`);
         stockfish.postMessage(`go movetime ${moveTime}`);
       }
       if (event.data.startsWith('bestmove')) {
@@ -153,8 +145,9 @@ const ChessGame = () => {
         const from = fromTo.slice(0, 2);
         const to = fromTo.slice(2, 4);
 
-        chess.move({ from, to, promotion: 'q' });
-        setFen(chess.fen());
+        gameInstance.move({ from, to, promotion: 'q' });
+        setFen(gameInstance.fen());
+        setChess(new Chess(gameInstance.fen()));
         setAIThinking(false);
       }
     };
@@ -162,8 +155,12 @@ const ChessGame = () => {
     stockfish.postMessage('uci');
   };
 
-  const togglePlayerColor = () => {
-    const newColor = playerColor === 'w' ? 'b' : 'w';
+  const resetGame = (newColor) => {
+    if (stockfish) {
+      stockfish.terminate(); // ✅ Kill old worker
+      setStockfish(null);    // ✅ Clear the state
+    }
+  
     const newGame = new Chess();
     setPlayerColor(newColor);
     setChess(newGame);
@@ -171,15 +168,56 @@ const ChessGame = () => {
     setGameOver(false);
     setMessage('');
     setAIThinking(false);
+    setClickedSquare(null);
+  
+    if (aiEngine === 'stockfish') {
+      const worker = new Worker(`${process.env.PUBLIC_URL}/stockfish/stockfish.js`);
+      worker.postMessage('uci');
+      setStockfish(worker);
+  
+      // Wait for worker to initialize before moving
+      worker.onmessage = (event) => {
+        if (event.data === 'uciok') {
+          worker.postMessage('isready');
+        }
+        if (event.data === 'readyok') {
+          if (newGame.turn() !== newColor) {
+            setAIThinking(true);
+            worker.postMessage(`position fen ${newGame.fen()}`);
+            worker.postMessage(`go movetime ${searchDepth * 1000}`);
+          }
+        }
+        if (event.data.startsWith('bestmove')) {
+          const [_, fromTo] = event.data.split(' ');
+          const from = fromTo.slice(0, 2);
+          const to = fromTo.slice(2, 4);
+  
+          const move = newGame.move({ from, to, promotion: 'q' });
+          if (move) {
+            setFen(newGame.fen());
+            setChess(new Chess(newGame.fen()));
+          }
+          setAIThinking(false);
+        }
+      };
+    } else {
+      if (newGame.turn() !== newColor) {
+        setAIThinking(true);
+        setTimeout(() => {
+          makeAIMoveFromGame(newGame);
+        }, 500);
+      }
+    }
   };
+  
 
   const handleRestart = () => {
-    const newGame = new Chess();
-    setChess(newGame);
-    setFen(newGame.fen());
-    setGameOver(false);
-    setMessage('');
-    setAIThinking(false);
+    resetGame(playerColor);
+  };
+
+  const togglePlayerColor = () => {
+    const newColor = playerColor === 'w' ? 'b' : 'w';
+    resetGame(newColor);
   };
 
   const handleSquareClick = (square) => {
@@ -201,37 +239,43 @@ const ChessGame = () => {
     return styles;
   };
 
-  const increaseDifficulty = () => setSearchDepth(prev => Math.min(prev + 1, 3));
+  const increaseDifficulty = () => setSearchDepth(prev => Math.min(prev + 1, 4));
   const decreaseDifficulty = () => setSearchDepth(prev => Math.max(prev - 1, 1));
 
   const getDifficultyLabel = () => {
+    const suffix =
+      searchDepth === 1 ? ' (easiest)' :
+      searchDepth === 4 ? ' (hardest)' :
+      '';
+  
     return aiEngine === 'minimax'
-      ? ['Easy', 'Medium', 'Hard'][searchDepth - 1]
-      : ['Easy (1s)', 'Medium (2s)', 'Hard (3s)'][searchDepth - 1];
+      ? `Search Depth ${searchDepth}${suffix}`
+      : `Thinking ${searchDepth}s${suffix}`;
   };
+  
 
   return (
     <div className="chess-game">
-      <h1>AI Chess Game</h1>
-      <div>
-        <select onChange={e => setAIEngine(e.target.value)} value={aiEngine}>
+      <h1>AI Chess Game V2</h1>
+      <div className="button-group">
+        <select className="engine-select" onChange={e => setAIEngine(e.target.value)} value={aiEngine}>
           <option value="minimax">Minimax</option>
           <option value="stockfish">Stockfish</option>
         </select>
-        <button onClick={togglePlayerColor}>
+        <button className="color-toggle-button" onClick={togglePlayerColor}>
           Play as {playerColor === 'w' ? 'Black' : 'White'}
         </button>
-        <button onClick={handleRestart}>Restart</button>
+        <button className="reset-button" onClick={handleRestart}>Restart</button>
         <button onClick={decreaseDifficulty}>Decrease Difficulty</button>
         <button onClick={increaseDifficulty}>Increase Difficulty</button>
-        <p className="player-info">AI Engine: {aiEngine}</p>
-        <p className="player-info">AI Difficulty Level: {getDifficultyLabel()}</p>
-        <p className="player-info">You are: {playerColor === 'w' ? 'White' : 'Black'}</p>
-        <p className="player-info">The AI is: {playerColor === 'w' ? 'Black' : 'White'}</p>
-        <p className={`status-message ${aiThinking ? 'ai-thinking' : 'your-move'}`}>
-          {aiThinking ? 'AI is thinking...' : 'Your move!'}
-        </p>
       </div>
+      <p className="player-info">AI Engine: {aiEngine.charAt(0).toUpperCase() + aiEngine.slice(1)}</p>
+      <p className="player-info">AI Difficulty Level: {getDifficultyLabel()}</p>
+      <p className="player-info">You are: {playerColor === 'w' ? 'White' : 'Black'}</p>
+      <p className="player-info">The AI is: {playerColor === 'w' ? 'Black' : 'White'}</p>
+      <p className={`status-message ${aiThinking ? 'ai-thinking' : 'your-move'}`}>
+        {aiThinking ? 'AI is thinking...' : 'Your move!'}
+      </p>
       {gameOver && <h2>{message}</h2>}
       <div className="board-container">
         <Chessboard

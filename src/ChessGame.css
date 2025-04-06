@@ -5,21 +5,21 @@
   justify-content: center;
   padding: 20px;
   box-sizing: border-box;
-  min-height: 100vh; /* Ensure it covers the full height of the viewport */
-  background-color: #000000; /* Set background to black */
+  min-height: 100vh;
+  background-color: #000000;
 }
 
 .chess-game h1 {
   margin: 0;
   padding: 20px;
-  color: #ffffff; /* Set text color to white for better visibility */
+  color: #ffffff;
 }
 
 .chess-game .board-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: #b58863; /* Keep the chessboard background color */
+  background-color: #b58863;
   padding: 10px;
   border-radius: 10px;
 }
@@ -36,42 +36,72 @@
 }
 
 .chess-game .player-info {
-  font-size: 20px; /* Set the font size to make the text smaller */
-  color: #ffffff; /* Ensure text color is white for better visibility */
-  margin: 5px 0; /* Add some margin for spacing */
+  font-size: 20px;
+  color: #ffffff;
+  margin: 5px 0;
 }
 
 .chess-game .status-message {
-  font-size: 40px; /* Set the font size for the status message */
-  margin: 10px 0; /* Add some margin for spacing */
-  font-weight: bold; /* Make the text bold */
+  font-size: 40px;
+  margin: 10px 0;
+  font-weight: bold;
 }
 
 .chess-game .status-message.ai-thinking {
-  color: #ff00ff; /* Bright purple for AI is thinking */
+  color: #ff00ff;
 }
 
 .chess-game .status-message.your-move {
-  color: #33e3ec; /* Bright blue for your move */
+  color: #33e3ec;
 }
 
-.chess-game button {
-  background-color: #4CAF50; /* Green background */
-  border: none; /* Remove borders */
-  color: white; /* White text */
-  padding: 10px 20px; /* Some padding */
-  text-align: center; /* Center the text (if you want to align the text center) */
-  text-decoration: none; /* Remove underline */
-  display: inline-block; /* Make the button inline-block so that it behaves like a button */
-  font-size: 30px; /* Increase font size */
-  margin: 10px 5px; /* Some margin */
-  cursor: pointer; /* Pointer/hand icon */
-  border-radius: 12px; /* Rounded corners */
-  transition: background-color 0.3s ease; /* Smooth transition for background color */
+.chess-game .button-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-.chess-game button:hover {
-  background-color: #45a049; /* Darker green on hover */
+.chess-game button,
+.chess-game .engine-select {
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  font-size: 30px;
+  margin: 10px 5px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.chess-game button:hover,
+.chess-game .engine-select:hover {
+  background-color: #45a049;
+}
+
+.chess-game .engine-select {
+  background-color: #00bfff;
+}
+
+.chess-game .engine-select:hover {
+  background-color: #009acd;
+}
+
+.chess-game .reset-button {
+  background-color: #e53935;
+}
+
+.chess-game .reset-button:hover {
+  background-color: #c62828;
+}
+
+.chess-game .color-toggle-button {
+  background-color: #d3d3d3;
+  color: black;
+}
+
+.chess-game .color-toggle-button:hover {
+  background-color: #b0b0b0;
 }
 
 .chess-game label {
