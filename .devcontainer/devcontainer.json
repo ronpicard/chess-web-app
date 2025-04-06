@@ -1,5 +1,5 @@
 {
-    "name": "RHEL DevContainer",
+    "name": "Ubuntu DevContainer",
     "build": {
         "dockerfile": "Dockerfile"
     },
