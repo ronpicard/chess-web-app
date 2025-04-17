@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
 import Chessboard from 'chessboardjsx';
 import './ChessGame.css';
@@ -16,6 +16,7 @@ const ChessGame = () => {
   const [clickedSquare, setClickedSquare] = useState(null);
   const [aiEngine, setAIEngine] = useState('stockfish');
   const [stockfish, setStockfish] = useState(null);
+  const aiGameRef = useRef(new Chess());
 
   function getBoardSize() {
     const minWidthHeight = Math.min(window.innerWidth, window.innerHeight);
@@ -30,12 +31,49 @@ const ChessGame = () => {
 
   useEffect(() => {
     if (aiEngine === 'stockfish') {
-      const worker = new Worker(`${process.env.PUBLIC_URL}/stockfish/stockfish.js`);
-      worker.postMessage('uci');
-      setStockfish(worker);
-      return () => worker.terminate();
+      const stockfishWorker = new Worker(`${process.env.PUBLIC_URL}/stockfish/stockfish-17-single.js`);
+      setStockfish(stockfishWorker);
+      stockfishWorker.postMessage('uci');
+
+      stockfishWorker.onmessage = (event) => {
+        const msg = event.data;
+
+        if (msg === 'uciok') {
+          stockfishWorker.postMessage('isready');
+        }
+
+        if (msg === 'readyok') {
+          if (aiThinking) {
+            stockfishWorker.postMessage(`position fen ${aiGameRef.current.fen()}`);
+            stockfishWorker.postMessage(`go movetime ${searchDepth * 1000}`);
+          }
+        }
+
+        if (msg.startsWith('bestmove')) {
+          const [_, fromTo] = msg.split(' ');
+          const from = fromTo.slice(0, 2);
+          const to = fromTo.slice(2, 4);
+
+          const move = aiGameRef.current.move({ from, to, promotion: 'q' });
+
+          if (move) {
+            setFen(aiGameRef.current.fen());
+            setChess(new Chess(aiGameRef.current.fen()));
+          } else {
+            console.error('Invalid move from Stockfish:', {
+              from,
+              to,
+              fen: aiGameRef.current.fen(),
+            });
+          }
+
+          setAIThinking(false);
+        }
+      };
+
+      return () => stockfishWorker.terminate();
     }
-  }, [aiEngine]);
+  }, [aiEngine, searchDepth, aiThinking]);
 
   useEffect(() => {
     if (chess.isGameOver()) {
@@ -130,38 +168,23 @@ const ChessGame = () => {
     }
 
     if (!stockfish) return;
-    const moveTime = searchDepth * 1000;
 
-    stockfish.onmessage = (event) => {
-      if (event.data === 'uciok') {
-        stockfish.postMessage('isready');
-      }
-      if (event.data === 'readyok') {
-        stockfish.postMessage(`position fen ${gameInstance.fen()}`);
-        stockfish.postMessage(`go movetime ${moveTime}`);
-      }
-      if (event.data.startsWith('bestmove')) {
-        const [_, fromTo] = event.data.split(' ');
-        const from = fromTo.slice(0, 2);
-        const to = fromTo.slice(2, 4);
+    const clone = new Chess(gameInstance.fen());
+    aiGameRef.current = clone;
 
-        gameInstance.move({ from, to, promotion: 'q' });
-        setFen(gameInstance.fen());
-        setChess(new Chess(gameInstance.fen()));
-        setAIThinking(false);
-      }
-    };
-
-    stockfish.postMessage('uci');
+    setAIThinking(true);
+    stockfish.postMessage(`position fen ${clone.fen()}`);
+    stockfish.postMessage(`go movetime ${searchDepth * 1000}`);
   };
 
   const resetGame = (newColor) => {
     if (stockfish) {
-      stockfish.terminate(); // ✅ Kill old worker
-      setStockfish(null);    // ✅ Clear the state
+      stockfish.terminate();
+      setStockfish(null);
     }
-  
+
     const newGame = new Chess();
+    aiGameRef.current = newGame;
     setPlayerColor(newColor);
     setChess(newGame);
     setFen(newGame.fen());
@@ -169,51 +192,16 @@ const ChessGame = () => {
     setMessage('');
     setAIThinking(false);
     setClickedSquare(null);
-  
-    if (aiEngine === 'stockfish') {
-      const worker = new Worker(`${process.env.PUBLIC_URL}/stockfish/stockfish.js`);
-      worker.postMessage('uci');
-      setStockfish(worker);
-  
-      // Wait for worker to initialize before moving
-      worker.onmessage = (event) => {
-        if (event.data === 'uciok') {
-          worker.postMessage('isready');
-        }
-        if (event.data === 'readyok') {
-          if (newGame.turn() !== newColor) {
-            setAIThinking(true);
-            worker.postMessage(`position fen ${newGame.fen()}`);
-            worker.postMessage(`go movetime ${searchDepth * 1000}`);
-          }
-        }
-        if (event.data.startsWith('bestmove')) {
-          const [_, fromTo] = event.data.split(' ');
-          const from = fromTo.slice(0, 2);
-          const to = fromTo.slice(2, 4);
-  
-          const move = newGame.move({ from, to, promotion: 'q' });
-          if (move) {
-            setFen(newGame.fen());
-            setChess(new Chess(newGame.fen()));
-          }
-          setAIThinking(false);
-        }
-      };
-    } else {
+
+    if (aiEngine === 'minimax') {
       if (newGame.turn() !== newColor) {
         setAIThinking(true);
-        setTimeout(() => {
-          makeAIMoveFromGame(newGame);
-        }, 500);
+        setTimeout(() => makeAIMoveFromGame(newGame), 500);
       }
     }
   };
-  
 
-  const handleRestart = () => {
-    resetGame(playerColor);
-  };
+  const handleRestart = () => resetGame(playerColor);
 
   const togglePlayerColor = () => {
     const newColor = playerColor === 'w' ? 'b' : 'w';
@@ -245,14 +233,11 @@ const ChessGame = () => {
   const getDifficultyLabel = () => {
     const suffix =
       searchDepth === 1 ? ' (easiest)' :
-      searchDepth === 4 ? ' (hardest)' :
-      '';
-  
+      searchDepth === 4 ? ' (hardest)' : '';
     return aiEngine === 'minimax'
       ? `Search Depth ${searchDepth}${suffix}`
       : `Thinking ${searchDepth}s${suffix}`;
   };
-  
 
   return (
     <div className="chess-game">
