@@ -304,7 +304,7 @@ const ChessGame = () => {
 
     return aiEngine === 'minimax'
       ? `Search Depth ${searchDepth}${suffix}`
-      : `${searchDepth} Seconds Search${suffix}`;
+      : `${searchDepth} Second Search${suffix}`;
   };
 
   return (
