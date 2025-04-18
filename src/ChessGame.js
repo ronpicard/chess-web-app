@@ -199,6 +199,50 @@ const ChessGame = () => {
         setTimeout(() => makeAIMoveFromGame(newGame), 500);
       }
     }
+
+    if (aiEngine === 'stockfish') {
+      const stockfishWorker = new Worker(`${process.env.PUBLIC_URL}/stockfish/stockfish-17-single.js`);
+      setStockfish(stockfishWorker);
+      stockfishWorker.postMessage('uci');
+
+      stockfishWorker.onmessage = (event) => {
+        const msg = event.data;
+
+        if (msg === 'uciok') {
+          stockfishWorker.postMessage('isready');
+        }
+
+        if (msg === 'readyok') {
+          if (newGame.turn() !== newColor) {
+            aiGameRef.current = new Chess(newGame.fen());
+            setAIThinking(true);
+            stockfishWorker.postMessage(`position fen ${newGame.fen()}`);
+            stockfishWorker.postMessage(`go movetime ${searchDepth * 1000}`);
+          }
+        }
+
+        if (msg.startsWith('bestmove')) {
+          const [_, fromTo] = msg.split(' ');
+          const from = fromTo.slice(0, 2);
+          const to = fromTo.slice(2, 4);
+
+          const move = aiGameRef.current.move({ from, to, promotion: 'q' });
+
+          if (move) {
+            setFen(aiGameRef.current.fen());
+            setChess(new Chess(aiGameRef.current.fen()));
+          } else {
+            console.error('Invalid move from Stockfish:', {
+              from,
+              to,
+              fen: aiGameRef.current.fen(),
+            });
+          }
+
+          setAIThinking(false);
+        }
+      };
+    }
   };
 
   const handleRestart = () => resetGame(playerColor);
