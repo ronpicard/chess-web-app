@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
+    <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
+    
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="Web-based AI Chess Game" />
+    <title>AI Chess Game</title>
+    <!-- ✅ Load Stockfish from CDN -->
+  </head>
+
+  <script>
+    if (window.location.protocol === 'http:') {
+      alert("WebAssembly requires cross-origin isolation. Please run your app on https.");
+    }
+  </script>
+  
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>
