@@ -8,10 +8,12 @@ The application is styled with a modern look and is optimized to be responsive, 
 
 - Play chess against Stockfish, the worlds best chess enginer.
 - Play chess againt a simple Minimax optimization algorithm with alpha-beta pruning.
+- Play chess against a greedy capture bot.
+- Play chess against a random bot.
 - Responsive design that adapts to different screen sizes.
 - Ability to switch between playing as white or black.
 - Ability to reset the board at any time.
-- Ability to increase or decreat the difficult of your opponent.
+- Ability to increase or decrease the difficultly of your opponent.
 - Visual indicators for game status, including checkmate, draw, and stalemate.
 - Modern UI with a consistent black background and a visually appealing chessboard.
 
