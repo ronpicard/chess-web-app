@@ -189,7 +189,7 @@ const ChessGame = () => {
     }
 
     if (aiEngine === 'capture') {
-      console.log('CaptureBot activated...');
+      console.log('Greedy activated...');
       const clone = new Chess(gameInstance.fen());
       const captures = clone.moves({ verbose: true }).filter(m => m.flags.includes('c') || m.flags.includes('e'));
 
@@ -197,11 +197,11 @@ const ChessGame = () => {
 
       if (captures.length > 0) {
         selected = captures[Math.floor(Math.random() * captures.length)];
-        console.log('CaptureBot made a capture move:', selected);
+        console.log('Greedy made a capture move:', selected);
       } else {
         const allMoves = clone.moves({ verbose: true });
         selected = allMoves[Math.floor(Math.random() * allMoves.length)];
-        console.log('CaptureBot fallback to random move:', selected);
+        console.log('Greedy fallback to random move:', selected);
       }
 
       const moveResult = gameInstance.move({
@@ -214,7 +214,7 @@ const ChessGame = () => {
         setFen(gameInstance.fen());
         setChess(new Chess(gameInstance.fen()));
       } else {
-        console.warn('CaptureBot attempted invalid move:', selected);
+        console.warn('Greedy attempted invalid move:', selected);
       }
 
       setAIThinking(false);
@@ -296,7 +296,7 @@ const ChessGame = () => {
 
   const getDifficultyLabel = () => {
     if (aiEngine === 'random') return 'n/a';
-    if (aiEngine === 'capture') return 'Capture moves only or fallback';
+    if (aiEngine === 'capture') return 'n/a';
 
     const suffix =
       searchDepth === 1 ? ' (easiest)' :
@@ -313,9 +313,9 @@ const ChessGame = () => {
       <div className="button-group">
         <select className="engine-select" onChange={e => setAIEngine(e.target.value)} value={aiEngine}>
           <option value="minimax">Minimax</option>
-          <option value="stockfish">Stockfish</option>
-          <option value="random">RandomBot</option>
-          <option value="capture">CaptureBot</option>
+          <option value="stockfish">Stockfish 17</option>
+          <option value="random">Random</option>
+          <option value="capture">Greedy</option>
         </select>
         <button className="color-toggle-button" onClick={togglePlayerColor} disabled={aiThinking}>
           Play as {playerColor === 'w' ? 'Black' : 'White'}
@@ -334,8 +334,8 @@ const ChessGame = () => {
               : aiEngine === 'minimax'
               ? 'Minimax (Normal Opponent)'
               : aiEngine === 'capture'
-              ? 'CaptureBot (Reckless Opponent)'
-              : 'RandomBot (Silly Opponent)'}
+              ? 'Greedy (Reckless Opponent)'
+              : 'Random (Silly Opponent)'}
           </span>
         </p>
 
