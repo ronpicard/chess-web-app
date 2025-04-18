@@ -132,3 +132,8 @@
   font-size: 30px;
   text-align: center;
 }
+
+.disabled-button {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

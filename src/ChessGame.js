@@ -189,7 +189,6 @@ const ChessGame = () => {
     }
 
     if (aiEngine === 'capture') {
-      console.log('Greedy activated...');
       const clone = new Chess(gameInstance.fen());
       const captures = clone.moves({ verbose: true }).filter(m => m.flags.includes('c') || m.flags.includes('e'));
 
@@ -197,11 +196,9 @@ const ChessGame = () => {
 
       if (captures.length > 0) {
         selected = captures[Math.floor(Math.random() * captures.length)];
-        console.log('Greedy made a capture move:', selected);
       } else {
         const allMoves = clone.moves({ verbose: true });
         selected = allMoves[Math.floor(Math.random() * allMoves.length)];
-        console.log('Greedy fallback to random move:', selected);
       }
 
       const moveResult = gameInstance.move({
@@ -213,8 +210,6 @@ const ChessGame = () => {
       if (moveResult) {
         setFen(gameInstance.fen());
         setChess(new Chess(gameInstance.fen()));
-      } else {
-        console.warn('Greedy attempted invalid move:', selected);
       }
 
       setAIThinking(false);
@@ -295,8 +290,7 @@ const ChessGame = () => {
   const decreaseDifficulty = () => setSearchDepth(prev => Math.max(prev - 1, 1));
 
   const getDifficultyLabel = () => {
-    if (aiEngine === 'random') return 'n/a';
-    if (aiEngine === 'capture') return 'n/a';
+    if (aiEngine === 'random' || aiEngine === 'capture') return 'n/a';
 
     const suffix =
       searchDepth === 1 ? ' (easiest)' :
@@ -311,18 +305,43 @@ const ChessGame = () => {
     <div className="chess-game">
       <h1>AI Chess Game V2</h1>
       <div className="button-group">
-        <select className="engine-select" onChange={e => setAIEngine(e.target.value)} value={aiEngine}>
-          <option value="minimax">Minimax</option>
+        <select
+          className={`engine-select${aiThinking ? ' disabled-button' : ''}`}
+          onChange={e => setAIEngine(e.target.value)}
+          value={aiEngine}
+          disabled={aiThinking}
+        >
+          <option value="minimax">Minimax Bot</option>
           <option value="stockfish">Stockfish 17</option>
-          <option value="random">Random</option>
-          <option value="capture">Greedy</option>
+          <option value="random">Random Bot</option>
+          <option value="capture">Greedy Bot</option>
         </select>
-        <button className="color-toggle-button" onClick={togglePlayerColor} disabled={aiThinking}>
+
+        <button
+          className={`color-toggle-button${aiThinking ? ' disabled-button' : ''}`}
+          onClick={togglePlayerColor}
+          disabled={aiThinking}
+        >
           Play as {playerColor === 'w' ? 'Black' : 'White'}
         </button>
+
         <button className="reset-button" onClick={handleRestart}>Restart</button>
-        <button onClick={decreaseDifficulty}>Decrease Difficulty</button>
-        <button onClick={increaseDifficulty}>Increase Difficulty</button>
+
+        <button
+          onClick={decreaseDifficulty}
+          disabled={aiThinking}
+          className={aiThinking ? 'disabled-button' : ''}
+        >
+          Decrease Difficulty
+        </button>
+
+        <button
+          onClick={increaseDifficulty}
+          disabled={aiThinking}
+          className={aiThinking ? 'disabled-button' : ''}
+        >
+          Increase Difficulty
+        </button>
       </div>
 
       <div className="game-info-panel">
@@ -332,10 +351,10 @@ const ChessGame = () => {
             {aiEngine === 'stockfish'
               ? 'Stockfish 17 (Very Hard Opponent)'
               : aiEngine === 'minimax'
-              ? 'Minimax (Normal Opponent)'
+              ? 'Minimax Bot (Normal Opponent)'
               : aiEngine === 'capture'
-              ? 'Greedy (Reckless Opponent)'
-              : 'Random (Silly Opponent)'}
+              ? 'Greedy Bot (Reckless Opponent)'
+              : 'Random Bot (Silly Opponent)'}
           </span>
         </p>
 
