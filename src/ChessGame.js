@@ -76,6 +76,13 @@ const ChessGame = () => {
   }, [aiEngine, searchDepth, aiThinking]);
 
   useEffect(() => {
+    if (!aiThinking && chess.turn() !== playerColor && !chess.isGameOver()) {
+      setAIThinking(true);
+      setTimeout(() => makeAIMoveFromGame(chess), 500);
+    }
+  }, [aiEngine]);
+
+  useEffect(() => {
     if (chess.isGameOver()) {
       setGameOver(true);
       if (chess.isCheckmate()) setMessage('Checkmate!');
@@ -167,6 +174,53 @@ const ChessGame = () => {
       return;
     }
 
+    if (aiEngine === 'random') {
+      const moves = gameInstance.moves({ verbose: true });
+      const move = moves[Math.floor(Math.random() * moves.length)];
+      gameInstance.move({
+        from: move.from,
+        to: move.to,
+        promotion: move.flags?.includes('p') ? 'q' : undefined
+      });
+      setFen(gameInstance.fen());
+      setChess(new Chess(gameInstance.fen()));
+      setAIThinking(false);
+      return;
+    }
+
+    if (aiEngine === 'capture') {
+      console.log('CaptureBot activated...');
+      const clone = new Chess(gameInstance.fen());
+      const captures = clone.moves({ verbose: true }).filter(m => m.flags.includes('c') || m.flags.includes('e'));
+
+      let selected;
+
+      if (captures.length > 0) {
+        selected = captures[Math.floor(Math.random() * captures.length)];
+        console.log('CaptureBot made a capture move:', selected);
+      } else {
+        const allMoves = clone.moves({ verbose: true });
+        selected = allMoves[Math.floor(Math.random() * allMoves.length)];
+        console.log('CaptureBot fallback to random move:', selected);
+      }
+
+      const moveResult = gameInstance.move({
+        from: selected.from,
+        to: selected.to,
+        promotion: selected.flags?.includes('p') ? 'q' : undefined
+      });
+
+      if (moveResult) {
+        setFen(gameInstance.fen());
+        setChess(new Chess(gameInstance.fen()));
+      } else {
+        console.warn('CaptureBot attempted invalid move:', selected);
+      }
+
+      setAIThinking(false);
+      return;
+    }
+
     if (!stockfish) return;
 
     const clone = new Chess(gameInstance.fen());
@@ -193,63 +247,29 @@ const ChessGame = () => {
     setAIThinking(false);
     setClickedSquare(null);
 
-    if (aiEngine === 'minimax') {
-      if (newGame.turn() !== newColor) {
-        setAIThinking(true);
-        setTimeout(() => makeAIMoveFromGame(newGame), 500);
-      }
-    }
-
-    if (aiEngine === 'stockfish') {
-      const stockfishWorker = new Worker(`${process.env.PUBLIC_URL}/stockfish/stockfish-17-single.js`);
-      setStockfish(stockfishWorker);
-      stockfishWorker.postMessage('uci');
-
-      stockfishWorker.onmessage = (event) => {
-        const msg = event.data;
-
-        if (msg === 'uciok') {
-          stockfishWorker.postMessage('isready');
-        }
-
-        if (msg === 'readyok') {
-          if (newGame.turn() !== newColor) {
-            aiGameRef.current = new Chess(newGame.fen());
-            setAIThinking(true);
-            stockfishWorker.postMessage(`position fen ${newGame.fen()}`);
-            stockfishWorker.postMessage(`go movetime ${searchDepth * 1000}`);
-          }
-        }
-
-        if (msg.startsWith('bestmove')) {
-          const [_, fromTo] = msg.split(' ');
-          const from = fromTo.slice(0, 2);
-          const to = fromTo.slice(2, 4);
-
-          const move = aiGameRef.current.move({ from, to, promotion: 'q' });
-
-          if (move) {
-            setFen(aiGameRef.current.fen());
-            setChess(new Chess(aiGameRef.current.fen()));
-          } else {
-            console.error('Invalid move from Stockfish:', {
-              from,
-              to,
-              fen: aiGameRef.current.fen(),
-            });
-          }
-
-          setAIThinking(false);
-        }
-      };
+    const aiShouldMove = newGame.turn() !== newColor && !newGame.isGameOver();
+    if (aiShouldMove) {
+      setAIThinking(true);
+      setTimeout(() => makeAIMoveFromGame(newGame), 500);
     }
   };
 
   const handleRestart = () => resetGame(playerColor);
 
   const togglePlayerColor = () => {
+    if (aiThinking) {
+      alert("Please wait — the AI is still thinking!");
+      return;
+    }
+
     const newColor = playerColor === 'w' ? 'b' : 'w';
-    resetGame(newColor);
+    setPlayerColor(newColor);
+
+    const isAITurn = chess.turn() !== newColor && !chess.isGameOver();
+    if (isAITurn) {
+      setAIThinking(true);
+      setTimeout(() => makeAIMoveFromGame(chess), 500);
+    }
   };
 
   const handleSquareClick = (square) => {
@@ -275,12 +295,16 @@ const ChessGame = () => {
   const decreaseDifficulty = () => setSearchDepth(prev => Math.max(prev - 1, 1));
 
   const getDifficultyLabel = () => {
+    if (aiEngine === 'random') return 'n/a';
+    if (aiEngine === 'capture') return 'Capture moves only or fallback';
+
     const suffix =
       searchDepth === 1 ? ' (easiest)' :
       searchDepth === 4 ? ' (hardest)' : '';
+
     return aiEngine === 'minimax'
       ? `Search Depth ${searchDepth}${suffix}`
-      : `Thinking ${searchDepth}s${suffix}`;
+      : `${searchDepth} Seconds Search${suffix}`;
   };
 
   return (
@@ -290,22 +314,57 @@ const ChessGame = () => {
         <select className="engine-select" onChange={e => setAIEngine(e.target.value)} value={aiEngine}>
           <option value="minimax">Minimax</option>
           <option value="stockfish">Stockfish</option>
+          <option value="random">RandomBot</option>
+          <option value="capture">CaptureBot</option>
         </select>
-        <button className="color-toggle-button" onClick={togglePlayerColor}>
+        <button className="color-toggle-button" onClick={togglePlayerColor} disabled={aiThinking}>
           Play as {playerColor === 'w' ? 'Black' : 'White'}
         </button>
         <button className="reset-button" onClick={handleRestart}>Restart</button>
         <button onClick={decreaseDifficulty}>Decrease Difficulty</button>
         <button onClick={increaseDifficulty}>Increase Difficulty</button>
       </div>
-      <p className="player-info">AI Engine: {aiEngine.charAt(0).toUpperCase() + aiEngine.slice(1)}</p>
-      <p className="player-info">AI Difficulty Level: {getDifficultyLabel()}</p>
-      <p className="player-info">You are: {playerColor === 'w' ? 'White' : 'Black'}</p>
-      <p className="player-info">The AI is: {playerColor === 'w' ? 'Black' : 'White'}</p>
+
+      <div className="game-info-panel">
+        <p className="engine-line">
+          <span className="label">AI Engine: </span>
+          <span className="value engine">
+            {aiEngine === 'stockfish'
+              ? 'Stockfish 17 (Very Hard Opponent)'
+              : aiEngine === 'minimax'
+              ? 'Minimax (Normal Opponent)'
+              : aiEngine === 'capture'
+              ? 'CaptureBot (Reckless Opponent)'
+              : 'RandomBot (Silly Opponent)'}
+          </span>
+        </p>
+
+        <p className="engine-line">
+          <span className="label">Difficulty: </span>
+          <span className="value difficulty">{getDifficultyLabel()}</span>
+        </p>
+
+        <p className="engine-line">
+          <span className="label">You are: </span>
+          <span className={`value player ${playerColor === 'w' ? 'white' : 'black'}`}>
+            {playerColor === 'w' ? 'White' : 'Black'}
+          </span>
+        </p>
+
+        <p className="engine-line">
+          <span className="label">AI is: </span>
+          <span className={`value player ${playerColor === 'w' ? 'black' : 'white'}`}>
+            {playerColor === 'w' ? 'Black' : 'White'}
+          </span>
+        </p>
+      </div>
+
       <p className={`status-message ${aiThinking ? 'ai-thinking' : 'your-move'}`}>
         {aiThinking ? 'AI is thinking...' : 'Your move!'}
       </p>
+
       {gameOver && <h2>{message}</h2>}
+
       <div className="board-container">
         <Chessboard
           position={fen}

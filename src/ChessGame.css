@@ -36,7 +36,7 @@
 }
 
 .chess-game .player-info {
-  font-size: 20px;
+  font-size: 30px;
   color: #ffffff;
   margin: 5px 0;
 }
@@ -78,6 +78,16 @@
 .chess-game .engine-select:hover {
   background-color: #45a049;
 }
+
+.chess-game .engine-line {
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  line-height: 1.2;
+  color: #ccc;
+  font-weight: 500;
+}
+
 
 .chess-game .engine-select {
   background-color: #00bfff;
