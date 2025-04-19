@@ -301,6 +301,8 @@ const ChessGame = () => {
       : `${searchDepth} Second Search${suffix}`;
   };
 
+  const difficultyDisabled = aiThinking || aiEngine === 'random' || aiEngine === 'capture';
+
   return (
     <div className="chess-game">
       <h1>AI Chess Game V2</h1>
@@ -314,7 +316,7 @@ const ChessGame = () => {
           <option value="minimax">Minimax Bot</option>
           <option value="stockfish">Stockfish 17</option>
           <option value="random">Random Bot</option>
-          <option value="capture">Greedy Bot</option>
+          <option value="capture">Aggressive Bot</option>
         </select>
 
         <button
@@ -329,16 +331,16 @@ const ChessGame = () => {
 
         <button
           onClick={decreaseDifficulty}
-          disabled={aiThinking}
-          className={aiThinking ? 'disabled-button' : ''}
+          disabled={difficultyDisabled}
+          className={difficultyDisabled ? 'disabled-button' : ''}
         >
           Decrease Difficulty
         </button>
 
         <button
           onClick={increaseDifficulty}
-          disabled={aiThinking}
-          className={aiThinking ? 'disabled-button' : ''}
+          disabled={difficultyDisabled}
+          className={difficultyDisabled ? 'disabled-button' : ''}
         >
           Increase Difficulty
         </button>
@@ -353,7 +355,7 @@ const ChessGame = () => {
               : aiEngine === 'minimax'
               ? 'Minimax Bot (Normal Opponent)'
               : aiEngine === 'capture'
-              ? 'Greedy Bot (Reckless Opponent)'
+              ? 'Aggressive Bot (Reckless Opponent)'
               : 'Random Bot (Silly Opponent)'}
           </span>
         </p>
