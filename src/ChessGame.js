@@ -316,7 +316,7 @@ const ChessGame = () => {
           <option value="minimax">Minimax Bot</option>
           <option value="stockfish">Stockfish 17</option>
           <option value="random">Random Bot</option>
-          <option value="capture">Aggressive Bot</option>
+          <option value="capture">Greedy Bot</option>
         </select>
 
         <button
@@ -355,7 +355,7 @@ const ChessGame = () => {
               : aiEngine === 'minimax'
               ? 'Minimax Bot (Normal Opponent)'
               : aiEngine === 'capture'
-              ? 'Aggressive Bot (Reckless Opponent)'
+              ? 'Greedy Bot (Reckless Opponent)'
               : 'Random Bot (Silly Opponent)'}
           </span>
         </p>
