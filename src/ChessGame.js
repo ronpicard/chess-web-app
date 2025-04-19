@@ -334,7 +334,7 @@ const ChessGame = () => {
           disabled={difficultyDisabled}
           className={difficultyDisabled ? 'disabled-button' : ''}
         >
-          Decrease Difficulty
+          - Difficulty
         </button>
 
         <button
@@ -342,7 +342,7 @@ const ChessGame = () => {
           disabled={difficultyDisabled}
           className={difficultyDisabled ? 'disabled-button' : ''}
         >
-          Increase Difficulty
+          + Difficulty
         </button>
       </div>
 
