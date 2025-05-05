@@ -1,6 +1,10 @@
-# Chess Web App
 
-Welcome to the Chess Web App! This project is a React-based web application that allows users to play chess against a either the worlds best chess engine Stockfish (extremely hard), or a simple minimax optimization algorithm (much easier). 
+
+# [Live Demo!!](https://ronpicard.github.io/chess-web-app/)
+
+# AI Chess Web App
+
+Welcome to the AI Chess Web App! This project is a React-based web application that allows users to play chess against a either the worlds best chess engine Stockfish (extremely hard), or a simple minimax optimization algorithm (much easier). 
 
 The application is styled with a modern look and is optimized to be responsive, providing a good user experience on various screen sizes.
 
@@ -36,8 +40,4 @@ The application is styled with a modern look and is optimized to be responsive, 
    cd chess-web-app
    reopen in devcontainer (VS Code)
    npm start
-
-## Live Demo!!
-https://ronpicard.github.io/chess-web-app/
-
 
